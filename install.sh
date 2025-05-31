@@ -21,7 +21,7 @@ echo "Installing Neovim..."
 
 # Add official Neovim PPA
 if ! grep -q neovim-ppa /etc/apt/sources.list /etc/apt/sources.list.d/* 2>/dev/null; then
-    sudo add-apt-repository -y ppa:neovim-ppa/stable
+    sudo add-apt-repository -y ppa:neovim-ppa/unstable
 fi
 sudo apt update
 
@@ -30,3 +30,12 @@ sudo apt install neovim
 
 git clone https://github.com/NvChad/starter ~/.config/nvim
 rm -rf ~/.config/nvim/.git
+
+# Now install the hacker vim files
+git clone https://github.com/nosachamos/hacker-vim /tmp/hacker-vim
+
+# Copy or merge the lua/ directory
+cp -rf /tmp/hacker-vim/lua/* ~/.config/nvim/lua/
+
+# Clean up
+rm -rf /tmp/hacker-vim
