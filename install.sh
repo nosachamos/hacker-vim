@@ -2,21 +2,26 @@
 
 # Check if Neovim is already installed
 if command -v nvim >/dev/null 2>&1; then
-  echo "Neovim is already installed. Will remove existing installation..."
-  sudo apt remove --purge neovim -y
+    echo "Neovim is already installed. Will remove existing installation..."
+    sudo apt remove --purge neovim -y
 
-  # Backup existing Neovim configuration
-  mv ~/.config/nvim{,.bak} 2>/dev/null
-  mv ~/.local/share/nvim{,.bak} 2>/dev/null
-  mv ~/.local/state/nvim{,.bak} 2>/dev/null
-  mv ~/.cache/nvim{,.bak} 2>/dev/null
+    # Backup existing Neovim configuration
+    mv ~/.config/nvim{,.bak} 2>/dev/null
+    mv ~/.local/share/nvim{,.bak} 2>/dev/null
+    mv ~/.local/state/nvim{,.bak} 2>/dev/null
+    mv ~/.cache/nvim{,.bak} 2>/dev/null
+
+    rm -rf ~/.config/nvim
+    rm -rf ~/.local/share/nvim
+    rm -rf ~/.local/state/nvim
+    rm -rf ~/.cache/nvim
 fi
 
 echo "Installing Neovim..."
 
 # Add official Neovim PPA
 if ! grep -q neovim-ppa /etc/apt/sources.list /etc/apt/sources.list.d/* 2>/dev/null; then
-  sudo add-apt-repository -y ppa:neovim-ppa/stable
+    sudo add-apt-repository -y ppa:neovim-ppa/stable
 fi
 sudo apt update
 
