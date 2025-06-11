@@ -39,3 +39,7 @@ cp -rf /tmp/hacker-vim/lua/* ~/.config/nvim/lua/
 
 # Clean up
 rm -rf /tmp/hacker-vim
+
+echo "HackerVim installed successfully!"
+echo ""
+echo "Run neovim to start."
