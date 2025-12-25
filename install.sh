@@ -4,7 +4,7 @@ set -euo pipefail
 echo "[1/7] Installing prerequisites..."
 sudo apt update
 sudo apt install -y --no-install-recommends \
-    git curl ca-certificates unzip wget ripgrep fd-find xclip
+    git curl ca-certificates unzip wget ripgrep fd-find xclip software-properties-common fontconfig
 
 echo "[2/7] Removing any existing Neovim config/state (backup + clean)..."
 ts="$(date +%Y%m%d_%H%M%S)"
@@ -37,7 +37,7 @@ echo "[4/7] Installing NvChad starter..."
 git clone --depth 1 https://github.com/NvChad/starter "$HOME/.config/nvim"
 rm -rf "$HOME/.config/nvim/.git"
 
-echo "[5/7] Fetching hacker-vim (this repo) and applying lua/ override..."
+echo "[5/7] Fetching hacker-vim and applying overrides (WITHOUT replacing NvChad lua/)..."
 tmpdir="$(mktemp -d)"
 trap 'rm -rf "$tmpdir"' EXIT
 
@@ -48,15 +48,24 @@ if [ ! -d "$tmpdir/hacker-vim/lua" ]; then
     exit 1
 fi
 
-# Replace NvChad's lua/ with your repo's lua/
-rm -rf "$HOME/.config/nvim/lua"
-mkdir -p "$HOME/.config/nvim"
-cp -a "$tmpdir/hacker-vim/lua" "$HOME/.config/nvim/lua"
+# Apply only the intended override files so NvChad keeps lua/configs/*, options.lua, autocmds.lua, etc.
+if [ -f "$tmpdir/hacker-vim/lua/chadrc.lua" ]; then
+    cp -a "$tmpdir/hacker-vim/lua/chadrc.lua" "$HOME/.config/nvim/lua/chadrc.lua"
+else
+    echo "ERROR: repo missing lua/chadrc.lua (expected NvChad override)."
+    exit 1
+fi
+
+if [ -d "$tmpdir/hacker-vim/lua/plugins" ]; then
+    rm -rf "$HOME/.config/nvim/lua/plugins"
+    cp -a "$tmpdir/hacker-vim/lua/plugins" "$HOME/.config/nvim/lua/plugins"
+else
+    echo "ERROR: repo missing lua/plugins/ (expected NvChad override)."
+    exit 1
+fi
 
 echo "[6/7] Headless plugin install (Lazy sync)..."
-# First run to bootstrap caches/plugins
 nvim --headless "+Lazy! sync" +qa || true
-# Second run tends to stabilize installs for some setups
 nvim --headless "+Lazy! sync" +qa || true
 
 echo "[7/7] (Optional) Kitty + Nerd Font setup..."
