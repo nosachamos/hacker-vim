@@ -46,6 +46,7 @@ if ! grep -q neovim-ppa /etc/apt/sources.list /etc/apt/sources.list.d/* 2>/dev/n
 fi
 sudo apt update
 sudo apt install -y neovim
+hash -r
 
 echo "[5/8] Installing NvChad starter..."
 git clone --depth 1 https://github.com/NvChad/starter "$HOME/.config/nvim"
