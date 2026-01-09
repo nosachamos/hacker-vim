@@ -67,6 +67,10 @@ fi
 rm -rf "$HOME/.config/nvim/lua/custom"
 cp -a "$tmpdir/hacker-vim/lua/custom" "$HOME/.config/nvim/lua/custom"
 
+if [ -f "$tmpdir/hacker-vim/lua/chadrc.lua" ]; then
+    cp -a "$tmpdir/hacker-vim/lua/chadrc.lua" "$HOME/.config/nvim/lua/chadrc.lua"
+fi
+
 echo "[7/8] Headless plugin install (Lazy sync)..."
 nvim --headless "+Lazy! sync" +qa || true
 nvim --headless "+Lazy! sync" +qa || true
