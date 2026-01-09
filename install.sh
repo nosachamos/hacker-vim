@@ -4,7 +4,7 @@ set -euo pipefail
 echo "[1/8] Installing prerequisites..."
 sudo apt update
 sudo apt install -y --no-install-recommends \
-    git curl ca-certificates unzip wget ripgrep fd-find xclip software-properties-common fontconfig
+    git curl ca-certificates unzip wget ripgrep fd-find xclip software-properties-common fontconfig python3
 
 echo "[2/8] Removing any existing Neovim binaries (best-effort)..."
 if dpkg -s neovim >/dev/null 2>&1; then
@@ -69,6 +69,38 @@ cp -a "$tmpdir/hacker-vim/lua/custom" "$HOME/.config/nvim/lua/custom"
 
 if [ -f "$tmpdir/hacker-vim/lua/chadrc.lua" ]; then
     cp -a "$tmpdir/hacker-vim/lua/chadrc.lua" "$HOME/.config/nvim/lua/chadrc.lua"
+fi
+
+plugins_init="$HOME/.config/nvim/lua/plugins/init.lua"
+if [ -f "$plugins_init" ]; then
+    if [ ! -f "$tmpdir/hacker-vim/lua/plugins/custom.lua" ]; then
+        echo "ERROR: repo missing lua/plugins/custom.lua (expected NvChad overlay)."
+        exit 1
+    fi
+
+    mkdir -p "$HOME/.config/nvim/lua/plugins"
+    cp -a "$tmpdir/hacker-vim/lua/plugins/custom.lua" "$HOME/.config/nvim/lua/plugins/custom.lua"
+
+    if ! grep -q 'plugins.custom' "$plugins_init"; then
+        python3 - "$plugins_init" <<'PY'
+import sys
+
+path = sys.argv[1]
+with open(path, "r", encoding="utf-8") as f:
+    lines = f.readlines()
+
+insert_line = '  { import = "plugins.custom" },\n'
+for i in range(len(lines) - 1, -1, -1):
+    if lines[i].strip() == "}":
+        lines.insert(i, insert_line)
+        break
+else:
+    raise SystemExit("ERROR: could not find closing '}' in lua/plugins/init.lua")
+
+with open(path, "w", encoding="utf-8") as f:
+    f.writelines(lines)
+PY
+    fi
 fi
 
 echo "[7/8] Headless plugin install (Lazy sync)..."
