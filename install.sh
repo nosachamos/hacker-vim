@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "[1/8] Installing prerequisites..."
+echo "[1/9] Installing prerequisites..."
 sudo apt update
 sudo apt install -y --no-install-recommends \
-    git curl ca-certificates unzip wget ripgrep fd-find xclip software-properties-common fontconfig python3
+    git curl ca-certificates unzip wget ripgrep fd-find xclip software-properties-common fontconfig python3 python3-pip
 
-echo "[2/8] Removing any existing Neovim binaries (best-effort)..."
+echo "[2/9] Removing any existing Neovim binaries (best-effort)..."
 if dpkg -s neovim >/dev/null 2>&1; then
     sudo apt remove -y neovim
 fi
@@ -20,7 +20,7 @@ if command -v snap >/dev/null 2>&1; then
     fi
 fi
 
-echo "[3/8] Removing any existing Neovim config/state (backup + clean)..."
+echo "[3/9] Removing any existing Neovim config/state (backup + clean)..."
 ts="$(date +%Y%m%d_%H%M%S)"
 
 for p in \
@@ -40,7 +40,7 @@ rm -rf \
     "$HOME/.local/state/nvim" \
     "$HOME/.cache/nvim"
 
-echo "[4/8] Installing Neovim..."
+echo "[4/9] Installing Neovim..."
 if ! grep -q neovim-ppa /etc/apt/sources.list /etc/apt/sources.list.d/* 2>/dev/null; then
     sudo add-apt-repository -y ppa:neovim-ppa/unstable
 fi
@@ -48,11 +48,14 @@ sudo apt update
 sudo apt install -y neovim
 hash -r
 
-echo "[5/8] Installing NvChad starter..."
+echo "[5/9] Installing Python debug adapter (debugpy)..."
+python3 -m pip install --user --upgrade debugpy
+
+echo "[6/9] Installing NvChad starter..."
 git clone --depth 1 https://github.com/NvChad/starter "$HOME/.config/nvim"
 rm -rf "$HOME/.config/nvim/.git"
 
-echo "[6/8] Fetching hacker-vim and applying custom overlay (lua/custom)..."
+echo "[7/9] Fetching hacker-vim and applying custom overlay (lua/custom)..."
 tmpdir="$(mktemp -d)"
 trap 'rm -rf "$tmpdir"' EXIT
 
@@ -103,11 +106,11 @@ PY
     fi
 fi
 
-echo "[7/8] Headless plugin install (Lazy sync)..."
+echo "[8/9] Headless plugin install (Lazy sync)..."
 nvim --headless "+Lazy! sync" +qa || true
 nvim --headless "+Lazy! sync" +qa || true
 
-echo "[8/8] (Optional) Kitty + Nerd Font setup..."
+echo "[9/9] (Optional) Kitty + Nerd Font setup..."
 if ! command -v kitty >/dev/null 2>&1; then
     sudo apt install -y kitty
 fi
