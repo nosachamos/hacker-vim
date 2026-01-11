@@ -49,7 +49,7 @@ local function resolve_python()
     warned_missing_debugpy = true
     vim.schedule(function()
       vim.notify(
-        "debugpy not found. Install with: python3 -m pip install --user debugpy",
+        "debugpy not found. Install in your venv: python -m pip install debugpy (recommended) or apt install python3-debugpy",
         vim.log.levels.WARN
       )
     end)

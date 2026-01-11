@@ -4,7 +4,7 @@ set -euo pipefail
 echo "[1/9] Installing prerequisites..."
 sudo apt update
 sudo apt install -y --no-install-recommends \
-    git curl ca-certificates unzip wget ripgrep fd-find xclip software-properties-common fontconfig python3 python3-pip
+    git curl ca-certificates unzip wget ripgrep fd-find xclip software-properties-common fontconfig python3 python3-venv
 
 echo "[2/9] Removing any existing Neovim binaries (best-effort)..."
 if dpkg -s neovim >/dev/null 2>&1; then
@@ -48,8 +48,14 @@ sudo apt update
 sudo apt install -y neovim
 hash -r
 
-echo "[5/9] Installing Python debug adapter (debugpy)..."
-python3 -m pip install --user --upgrade debugpy
+echo "[5/9] Ensuring Python debug adapter (debugpy) is available..."
+if apt-cache show python3-debugpy >/dev/null 2>&1; then
+    if ! sudo apt install -y python3-debugpy; then
+        echo "NOTE: Failed to install python3-debugpy. Install debugpy in your venv: python -m pip install debugpy"
+    fi
+else
+    echo "NOTE: python3-debugpy not available via apt. Install debugpy in your venv: python -m pip install debugpy"
+fi
 
 echo "[6/9] Installing NvChad starter..."
 git clone --depth 1 https://github.com/NvChad/starter "$HOME/.config/nvim"

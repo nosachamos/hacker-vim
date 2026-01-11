@@ -23,3 +23,7 @@ Python debugging keybindings (nvim-dap):
 - <leader>dt test method (python)
 - <leader>dT test class (python)
 - visual <leader>ds debug selection
+
+Debugpy install note:
+- The installer will try `apt install python3-debugpy` when available.
+- If you debug inside a venv (recommended), install debugpy in that venv: `python -m pip install debugpy`.
