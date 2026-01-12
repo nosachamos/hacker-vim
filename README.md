@@ -36,6 +36,7 @@ Python debugging keybindings (nvim-dap):
 Debugpy install note:
 - The installer will try `apt install python3-debugpy` when available.
 - If you debug inside a venv (recommended), install debugpy in that venv: `python -m pip install debugpy`.
+ - The overlay auto-detects venvs named `.venv`, `venv`, `env`, or `environment` in the repo root.
 
 Project debug configs (saved per repo):
 - Create `.nvim/dap.lua` in the repo root; it must return a table keyed by filetype.

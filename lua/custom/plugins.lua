@@ -26,7 +26,7 @@ local function resolve_python()
   end
 
   local cwd = vim.fn.getcwd()
-  for _, name in ipairs({ ".venv", "venv" }) do
+  for _, name in ipairs({ ".venv", "venv", "env", "environment" }) do
     table.insert(candidates, cwd .. "/" .. name .. "/bin/python")
   end
 
@@ -79,7 +79,16 @@ local function buffer_dir()
   if bufname == "" then
     return vim.fn.getcwd()
   end
-  return vim.fn.fnamemodify(bufname, ":p:h")
+
+  local abs = vim.fn.fnamemodify(bufname, ":p")
+  if vim.fn.filereadable(abs) == 1 then
+    return vim.fn.fnamemodify(abs, ":p:h")
+  end
+  if vim.fn.isdirectory(abs) == 1 then
+    return abs
+  end
+
+  return vim.fn.getcwd()
 end
 
 local function merge_dap_configurations(dap, configs)
@@ -153,6 +162,67 @@ local function load_project_dap_configs(dap, opts)
   end
 end
 
+local function has_configs_for(dap, filetype)
+  local configs = dap.configurations and dap.configurations[filetype]
+  return type(configs) == "table" and #configs > 0
+end
+
+local function select_and_run(dap, configs, prompt)
+  if type(configs) ~= "table" or #configs == 0 then
+    return
+  end
+
+  vim.ui.select(configs, {
+    prompt = prompt or "Select DAP config",
+    format_item = function(item)
+      return item.name or "Unnamed"
+    end,
+  }, function(choice)
+    if choice then
+      dap.run(choice)
+    end
+  end)
+end
+
+local function smart_continue(dap)
+  load_project_dap_configs(dap, { quiet = true })
+
+  local ft = vim.bo.filetype
+  if has_configs_for(dap, ft) then
+    dap.continue()
+    return
+  end
+
+  if has_configs_for(dap, "python") then
+    select_and_run(dap, dap.configurations.python, "Select Python config")
+    return
+  end
+
+  local filetypes = {}
+  for key, value in pairs(dap.configurations or {}) do
+    if type(value) == "table" and #value > 0 then
+      table.insert(filetypes, key)
+    end
+  end
+  table.sort(filetypes)
+
+  if #filetypes == 1 then
+    select_and_run(dap, dap.configurations[filetypes[1]], "Select DAP config")
+    return
+  end
+
+  if #filetypes > 1 then
+    vim.ui.select(filetypes, { prompt = "Select DAP filetype" }, function(choice)
+      if choice then
+        select_and_run(dap, dap.configurations[choice], "Select DAP config")
+      end
+    end)
+    return
+  end
+
+  vim.notify("No DAP configurations found. Add .nvim/dap.lua or .vscode/launch.json.", vim.log.levels.WARN)
+end
+
 return {
   {
     "karb94/neoscroll.nvim",
@@ -181,7 +251,9 @@ return {
       vim.fn.sign_define("DapBreakpointRejected", { text = "R", texthl = "DiagnosticHint" })
 
       local map = vim.keymap.set
-      map("n", "<F5>", dap.continue, { desc = "DAP continue" })
+      map("n", "<F5>", function()
+        smart_continue(dap)
+      end, { desc = "DAP continue" })
       map("n", "<F10>", dap.step_over, { desc = "DAP step over" })
       map("n", "<F11>", dap.step_into, { desc = "DAP step into" })
       map("n", "<F12>", dap.step_out, { desc = "DAP step out" })
