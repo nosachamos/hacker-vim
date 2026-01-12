@@ -79,6 +79,9 @@ cp -a "$tmpdir/hacker-vim/lua/custom" "$HOME/.config/nvim/lua/custom"
 if [ -f "$tmpdir/hacker-vim/lua/chadrc.lua" ]; then
     cp -a "$tmpdir/hacker-vim/lua/chadrc.lua" "$HOME/.config/nvim/lua/chadrc.lua"
 fi
+if [ -f "$tmpdir/hacker-vim/lua/autocmds.lua" ]; then
+    cp -a "$tmpdir/hacker-vim/lua/autocmds.lua" "$HOME/.config/nvim/lua/autocmds.lua"
+fi
 
 plugins_init="$HOME/.config/nvim/lua/plugins/init.lua"
 if [ -f "$plugins_init" ]; then

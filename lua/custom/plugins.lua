@@ -59,6 +59,100 @@ local function resolve_python()
   return cached_python_path
 end
 
+local base_dap_configurations = nil
+
+local function find_upwards(relpath, start_dir)
+  if not start_dir or start_dir == "" then
+    start_dir = vim.fn.getcwd()
+  end
+
+  local found = vim.fn.findfile(relpath, start_dir .. ";")
+  if found == "" then
+    return nil
+  end
+
+  return vim.fn.fnamemodify(found, ":p")
+end
+
+local function buffer_dir()
+  local bufname = vim.api.nvim_buf_get_name(0)
+  if bufname == "" then
+    return vim.fn.getcwd()
+  end
+  return vim.fn.fnamemodify(bufname, ":p:h")
+end
+
+local function merge_dap_configurations(dap, configs)
+  if type(configs) ~= "table" then
+    return
+  end
+
+  dap.configurations = dap.configurations or {}
+
+  for filetype, entries in pairs(configs) do
+    if type(entries) == "table" then
+      dap.configurations[filetype] = dap.configurations[filetype] or {}
+      for _, entry in ipairs(entries) do
+        table.insert(dap.configurations[filetype], entry)
+      end
+    end
+  end
+end
+
+local function load_project_dap_configs(dap, opts)
+  opts = opts or {}
+  local quiet = opts.quiet or false
+
+  dap.configurations = dap.configurations or {}
+  if base_dap_configurations then
+    dap.configurations = vim.deepcopy(base_dap_configurations)
+  end
+
+  local start_dir = buffer_dir()
+  if start_dir == "" then
+    return
+  end
+
+  local dap_lua = find_upwards(".nvim/dap.lua", start_dir)
+  local launch_json = find_upwards(".vscode/launch.json", start_dir)
+
+  local project_root = vim.fn.getcwd()
+  if dap_lua then
+    project_root = vim.fn.fnamemodify(dap_lua, ":h:h")
+  elseif launch_json then
+    project_root = vim.fn.fnamemodify(launch_json, ":h:h")
+  end
+
+  local loaded_any = false
+  if dap_lua and vim.fn.filereadable(dap_lua) == 1 then
+    local ok, configs = pcall(dofile, dap_lua)
+    if ok and type(configs) == "table" then
+      merge_dap_configurations(dap, configs)
+      loaded_any = true
+    else
+      vim.notify("Failed to load " .. dap_lua .. ": " .. tostring(configs), vim.log.levels.ERROR)
+    end
+  end
+
+  if launch_json and vim.fn.filereadable(launch_json) == 1 then
+    local ok, vscode = pcall(require, "dap.ext.vscode")
+    if ok then
+      vscode.load_launchjs(launch_json, { python = { "python" } })
+      loaded_any = true
+    else
+      vim.notify("Failed to load dap.ext.vscode: " .. tostring(vscode), vim.log.levels.ERROR)
+    end
+  end
+
+  if not quiet then
+    if loaded_any then
+      vim.notify("Loaded project DAP configs from " .. project_root, vim.log.levels.INFO)
+    else
+      vim.notify("No project DAP configs found from " .. start_dir, vim.log.levels.WARN)
+    end
+  end
+end
+
 return {
   {
     "karb94/neoscroll.nvim",
@@ -101,6 +195,13 @@ return {
       map("n", "<Leader>dr", dap.repl.open, { desc = "DAP REPL" })
       map("n", "<Leader>dR", dap.run_last, { desc = "DAP run last" })
       map("n", "<Leader>dq", dap.terminate, { desc = "DAP terminate" })
+      map("n", "<Leader>dL", function()
+        load_project_dap_configs(dap, { quiet = false })
+      end, { desc = "DAP load project configs" })
+
+      vim.api.nvim_create_user_command("DapReloadConfigs", function()
+        load_project_dap_configs(dap, { quiet = false })
+      end, {})
     end,
   },
   {
@@ -193,6 +294,11 @@ return {
       vim.keymap.set("v", "<Leader>ds", function()
         dap_python.debug_selection()
       end, { desc = "DAP Python debug selection" })
+
+      if not base_dap_configurations then
+        base_dap_configurations = vim.deepcopy(dap.configurations)
+      end
+      load_project_dap_configs(dap, { quiet = true })
     end,
   },
 }
