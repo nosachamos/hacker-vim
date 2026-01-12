@@ -9,6 +9,13 @@ curl -sSL "https://raw.githubusercontent.com/nosachamos/hacker-vim/master/instal
 This repo is an NVChad overlay. Custom config and plugins live in `lua/custom` and are copied into `~/.config/nvim/lua/custom` by the installer (currently includes neoscroll, VimBeGood, and Python debugging via nvim-dap). A small compatibility shim is also installed at `lua/chadrc.lua`, and for newer NvChad starters the installer adds an import in `lua/plugins/init.lua` to load `lua/plugins/custom.lua`.
 It also includes an autocmd that creates missing parent directories on save.
 
+Features include:
+- neoscroll for smooth scrolling with going page up / down;
+- automatic directory creation when doing :e (we all want it);
+- plugins for out-of-the-box python debugging;
+- an easy way of saving and launching various app configs per project;
+- much more
+
 Python debugging keybindings (nvim-dap):
 - F5 continue
 - F10 step over
