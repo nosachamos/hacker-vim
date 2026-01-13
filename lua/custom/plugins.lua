@@ -239,6 +239,20 @@ return {
     cmd = "VimBeGood",
   },
   {
+    "nvim-tree/nvim-tree.lua",
+    opts = function(_, opts)
+      opts.git = opts.git or {}
+      opts.git.enable = true
+      opts.git.ignore = false
+
+      opts.filters = opts.filters or {}
+      opts.filters.dotfiles = false
+      opts.filters.custom = {}
+
+      return opts
+    end,
+  },
+  {
     "mfussenegger/nvim-dap",
     lazy = false,
     config = function()
