@@ -61,6 +61,37 @@ echo "[6/9] Installing NvChad starter..."
 git clone --depth 1 https://github.com/NvChad/starter "$HOME/.config/nvim"
 rm -rf "$HOME/.config/nvim/.git"
 
+init_lua="$HOME/.config/nvim/init.lua"
+if [ -f "$init_lua" ]; then
+    python3 - "$init_lua" <<'PY'
+import re
+import sys
+
+path = sys.argv[1]
+text = open(path, "r", encoding="utf-8").read()
+
+if 'pcall(dofile, vim.g.base46_cache .. "defaults")' in text:
+    sys.exit(0)
+
+pattern = r'dofile\\(vim\\.g\\.base46_cache \\.\\. "defaults"\\)\\n+dofile\\(vim\\.g\\.base46_cache \\.\\. "statusline"\\)'
+replacement = """if vim.fn.filereadable(vim.g.base46_cache .. "defaults") == 0 then
+  local ok, base46 = pcall(require, "base46")
+  if ok then
+    base46.load_all_highlights()
+  end
+end
+pcall(dofile, vim.g.base46_cache .. "defaults")
+pcall(dofile, vim.g.base46_cache .. "statusline")"""
+
+new_text, count = re.subn(pattern, replacement, text, count=1)
+if count == 0:
+    raise SystemExit("ERROR: could not patch base46 cache block in init.lua")
+
+with open(path, "w", encoding="utf-8") as f:
+    f.write(new_text)
+PY
+fi
+
 echo "[7/9] Fetching hacker-vim and applying custom overlay (lua/custom)..."
 tmpdir="$(mktemp -d)"
 trap 'rm -rf "$tmpdir"' EXIT
