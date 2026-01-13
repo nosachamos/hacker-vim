@@ -1,4 +1,5 @@
 local cached_python_path = nil
+local cached_python_root = nil
 local warned_missing_debugpy = false
 
 local function has_debugpy(python)
@@ -14,8 +15,13 @@ local function has_debugpy(python)
   return vim.v.shell_error == 0
 end
 
-local function resolve_python()
-  if cached_python_path then
+local function resolve_python(root_dir)
+  local search_root = root_dir
+  if not search_root or search_root == "" then
+    search_root = vim.fn.getcwd()
+  end
+
+  if cached_python_path and cached_python_root == search_root then
     return cached_python_path
   end
 
@@ -25,9 +31,12 @@ local function resolve_python()
     table.insert(candidates, venv .. "/bin/python")
   end
 
-  local cwd = vim.fn.getcwd()
+  local cwd = search_root
   for _, name in ipairs({ ".venv", "venv", "env", "environment" }) do
-    table.insert(candidates, cwd .. "/" .. name .. "/bin/python")
+    local venv_dir = vim.fn.finddir(name, cwd .. ";")
+    if venv_dir ~= "" then
+      table.insert(candidates, vim.fn.fnamemodify(venv_dir, ":p") .. "/bin/python")
+    end
   end
 
   local system_python = vim.fn.exepath("python3")
@@ -41,6 +50,7 @@ local function resolve_python()
   for _, python in ipairs(candidates) do
     if has_debugpy(python) then
       cached_python_path = python
+      cached_python_root = search_root
       return python
     end
   end
@@ -56,10 +66,12 @@ local function resolve_python()
   end
 
   cached_python_path = system_python ~= "" and system_python or "python3"
+  cached_python_root = search_root
   return cached_python_path
 end
 
 local base_dap_configurations = nil
+local dap_project_root = nil
 
 local function find_upwards(relpath, start_dir)
   if not start_dir or start_dir == "" then
@@ -125,7 +137,7 @@ local function load_project_dap_configs(dap, opts)
   local dap_lua = find_upwards(".nvim/dap.lua", start_dir)
   local launch_json = find_upwards(".vscode/launch.json", start_dir)
 
-  local project_root = vim.fn.getcwd()
+  local project_root = start_dir
   if dap_lua then
     project_root = vim.fn.fnamemodify(dap_lua, ":h:h")
   elseif launch_json then
@@ -160,6 +172,32 @@ local function load_project_dap_configs(dap, opts)
       vim.notify("No project DAP configs found from " .. start_dir, vim.log.levels.WARN)
     end
   end
+
+  dap_project_root = project_root or start_dir
+end
+
+local function ensure_python_adapter(dap)
+  dap.adapters = dap.adapters or {}
+  local python_path = resolve_python(dap_project_root or buffer_dir())
+  local adapter = dap.adapters.python
+
+  if type(adapter) == "table" then
+    local is_debugpy = adapter.type == "executable"
+      and type(adapter.args) == "table"
+      and adapter.args[1] == "-m"
+      and adapter.args[2] == "debugpy.adapter"
+    if is_debugpy and adapter.command == python_path then
+      return
+    end
+  elseif adapter ~= nil then
+    return
+  end
+
+  dap.adapters.python = {
+    type = "executable",
+    command = python_path,
+    args = { "-m", "debugpy.adapter" },
+  }
 end
 
 local function has_configs_for(dap, filetype)
@@ -189,11 +227,15 @@ local function smart_continue(dap)
 
   local ft = vim.bo.filetype
   if has_configs_for(dap, ft) then
+    if ft == "python" then
+      ensure_python_adapter(dap)
+    end
     dap.continue()
     return
   end
 
   if has_configs_for(dap, "python") then
+    ensure_python_adapter(dap)
     select_and_run(dap, dap.configurations.python, "Select Python config")
     return
   end
