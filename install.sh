@@ -64,7 +64,6 @@ rm -rf "$HOME/.config/nvim/.git"
 init_lua="$HOME/.config/nvim/init.lua"
 if [ -f "$init_lua" ]; then
     python3 - "$init_lua" <<'PY'
-import re
 import sys
 
 path = sys.argv[1]
@@ -73,22 +72,44 @@ text = open(path, "r", encoding="utf-8").read()
 if 'pcall(dofile, vim.g.base46_cache .. "defaults")' in text:
     sys.exit(0)
 
-pattern = r'dofile\\(vim\\.g\\.base46_cache \\.\\. "defaults"\\)\\n+dofile\\(vim\\.g\\.base46_cache \\.\\. "statusline"\\)'
-replacement = """if vim.fn.filereadable(vim.g.base46_cache .. "defaults") == 0 then
-  local ok, base46 = pcall(require, "base46")
-  if ok then
-    base46.load_all_highlights()
-  end
-end
-pcall(dofile, vim.g.base46_cache .. "defaults")
-pcall(dofile, vim.g.base46_cache .. "statusline")"""
+lines = text.splitlines(keepends=True)
+new_lines = []
+inserted_loader = False
+replaced_any = False
 
-new_text, count = re.subn(pattern, replacement, text, count=1)
-if count == 0:
-    raise SystemExit("ERROR: could not patch base46 cache block in init.lua")
+def indent_of(line):
+    return line[: len(line) - len(line.lstrip())]
 
-with open(path, "w", encoding="utf-8") as f:
-    f.write(new_text)
+for line in lines:
+    stripped = line.strip()
+
+    if "dofile" in stripped and "vim.g.base46_cache" in stripped and ("\"defaults\"" in stripped or "'defaults'" in stripped):
+        indent = indent_of(line)
+        if not inserted_loader and "base46.load_all_highlights" not in text:
+            new_lines.append(indent + 'if vim.fn.filereadable(vim.g.base46_cache .. "defaults") == 0 then\n')
+            new_lines.append(indent + '  local ok, base46 = pcall(require, "base46")\n')
+            new_lines.append(indent + "  if ok then\n")
+            new_lines.append(indent + "    base46.load_all_highlights()\n")
+            new_lines.append(indent + "  end\n")
+            new_lines.append(indent + "end\n")
+            inserted_loader = True
+        new_lines.append(indent + 'pcall(dofile, vim.g.base46_cache .. "defaults")\n')
+        replaced_any = True
+        continue
+
+    if "dofile" in stripped and "vim.g.base46_cache" in stripped and ("\"statusline\"" in stripped or "'statusline'" in stripped):
+        indent = indent_of(line)
+        new_lines.append(indent + 'pcall(dofile, vim.g.base46_cache .. "statusline")\n')
+        replaced_any = True
+        continue
+
+    new_lines.append(line)
+
+if replaced_any:
+    with open(path, "w", encoding="utf-8") as f:
+        f.writelines(new_lines)
+else:
+    sys.stderr.write("NOTE: base46 cache lines not found; skipping init.lua patch.\n")
 PY
 fi
 
