@@ -61,8 +61,8 @@ M.polish_hl = {
     NormalFloat = { bg = "#000000" },
   },
   nvimtree = {
-    NvimTreeNormal = { bg = "#000000" },
-    NvimTreeNormalNC = { bg = "#000000" },
+    NvimTreeNormal = { bg = "#000000", fg = M.base_30.green },
+    NvimTreeNormalNC = { bg = "#000000", fg = M.base_30.green },
   },
   treesitter = {
     ["@variable"] = { fg = M.base_30.lavender },

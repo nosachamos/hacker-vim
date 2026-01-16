@@ -179,28 +179,46 @@ nvim --headless "+Lazy! sync" +qa || true
 nvim --headless "+Lazy! sync" +qa || true
 
 echo "[9/9] (Optional) Kitty + Nerd Font setup..."
-if ! command -v kitty >/dev/null 2>&1; then
-    sudo apt install -y kitty
+kitty_installed=0
+if command -v kitty >/dev/null 2>&1; then
+    kitty_installed=1
 fi
 
 FONT_DIR="$HOME/.local/share/fonts"
-if ! fc-list | grep -i "JetBrainsMono" | grep -qi "Nerd"; then
+font_installed=0
+if fc-list | grep -i "JetBrainsMono" | grep -qi "Nerd"; then
+    font_installed=1
+fi
+
+if [ "$kitty_installed" -eq 1 ] && [ "$font_installed" -eq 1 ]; then
+    echo "Kitty + Nerd Font already installed; skipping."
+else
+    if [ "$kitty_installed" -ne 1 ]; then
+        sudo apt install -y kitty
+        kitty_installed=1
+    fi
+
+    if [ "$font_installed" -ne 1 ]; then
     mkdir -p "$FONT_DIR"
     wget -qO /tmp/JetBrainsMono.zip "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/JetBrainsMono.zip"
     unzip -o /tmp/JetBrainsMono.zip -d "$FONT_DIR"
     fc-cache -fv
     rm -f /tmp/JetBrainsMono.zip
-fi
+        font_installed=1
+    fi
 
 KITTY_CONF="$HOME/.config/kitty/kitty.conf"
 mkdir -p "$(dirname "$KITTY_CONF")"
-if ! grep -q "JetBrainsMono Nerd Font" "$KITTY_CONF" 2>/dev/null; then
-    {
-        echo "font_family JetBrainsMono Nerd Font"
-        echo "bold_font JetBrainsMono Nerd Font Bold"
-        echo "italic_font JetBrainsMono Nerd Font Italic"
-        echo "bold_italic_font JetBrainsMono Nerd Font Bold Italic"
-    } >> "$KITTY_CONF"
+    if [ "$kitty_installed" -eq 1 ] && [ "$font_installed" -eq 1 ]; then
+        if ! grep -q "JetBrainsMono Nerd Font" "$KITTY_CONF" 2>/dev/null; then
+            {
+                echo "font_family JetBrainsMono Nerd Font"
+                echo "bold_font JetBrainsMono Nerd Font Bold"
+                echo "italic_font JetBrainsMono Nerd Font Italic"
+                echo "bold_italic_font JetBrainsMono Nerd Font Bold Italic"
+            } >> "$KITTY_CONF"
+        fi
+    fi
 fi
 
 echo ""
