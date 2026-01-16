@@ -134,6 +134,9 @@ fi
 if [ -f "$tmpdir/hacker-vim/lua/autocmds.lua" ]; then
     cp -a "$tmpdir/hacker-vim/lua/autocmds.lua" "$HOME/.config/nvim/lua/autocmds.lua"
 fi
+if [ -f "$tmpdir/hacker-vim/lua/mappings.lua" ]; then
+    cp -a "$tmpdir/hacker-vim/lua/mappings.lua" "$HOME/.config/nvim/lua/mappings.lua"
+fi
 
 plugins_init="$HOME/.config/nvim/lua/plugins/init.lua"
 if [ -f "$plugins_init" ]; then

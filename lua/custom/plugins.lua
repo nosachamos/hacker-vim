@@ -340,7 +340,28 @@ return {
       local dap = require("dap")
       local dapui = require("dapui")
 
-      dapui.setup()
+      dapui.setup({
+        layouts = {
+          {
+            elements = {
+              "scopes",
+              "breakpoints",
+              "watches",
+            },
+            size = 50,
+            position = "right",
+          },
+          {
+            elements = {
+              "stacks",
+              "console",
+              "repl",
+            },
+            size = 12,
+            position = "bottom",
+          },
+        },
+      })
 
       dap.listeners.after.event_initialized["dapui_config"] = function()
         dapui.open()

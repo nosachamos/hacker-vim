@@ -6,3 +6,10 @@ vim.api.nvim_create_autocmd("BufWritePre", {
     end
   end,
 })
+
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = "NvimTree",
+  callback = function()
+    vim.opt_local.winfixwidth = true
+  end,
+})
