@@ -6,7 +6,7 @@ Run the installation process:
 curl -sSL "https://raw.githubusercontent.com/nosachamos/hacker-vim/master/install.sh?$(date +%s)" | bash
 ```
 
-This repo is an NVChad overlay. Custom config and plugins live in `lua/custom` and are copied into `~/.config/nvim/lua/custom` by the installer (currently includes neoscroll, VimBeGood, Python debugging via nvim-dap, and nvim-tree showing gitignored/hidden files by default). A small compatibility shim is also installed at `lua/chadrc.lua`, and for newer NvChad starters the installer adds an import in `lua/plugins/init.lua` to load `lua/plugins/custom.lua`.
+This repo is an NVChad overlay. Custom config and plugins live in `lua/custom` and are copied into `~/.config/nvim/lua/custom` by the installer (currently includes neoscroll, VimBeGood, Python debugging via nvim-dap, and nvim-tree showing gitignored/hidden files by default). A custom theme named `hacker` is installed from `lua/themes/hacker.lua` (Catppuccin palette with pure black backgrounds; all colors are listed there for manual edits). A small compatibility shim is also installed at `lua/chadrc.lua`, and for newer NvChad starters the installer adds an import in `lua/plugins/init.lua` to load `lua/plugins/custom.lua`.
 It also includes an autocmd that creates missing parent directories on save.
 The installer patches NvChad's init.lua to safely generate/load base46 cache files on first run.
 

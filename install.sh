@@ -127,6 +127,10 @@ fi
 # Apply only the intended overlay so NvChad keeps its core lua/ tree.
 rm -rf "$HOME/.config/nvim/lua/custom"
 cp -a "$tmpdir/hacker-vim/lua/custom" "$HOME/.config/nvim/lua/custom"
+if [ -d "$tmpdir/hacker-vim/lua/themes" ]; then
+    rm -rf "$HOME/.config/nvim/lua/themes"
+    cp -a "$tmpdir/hacker-vim/lua/themes" "$HOME/.config/nvim/lua/themes"
+fi
 
 if [ -f "$tmpdir/hacker-vim/lua/chadrc.lua" ]; then
     cp -a "$tmpdir/hacker-vim/lua/chadrc.lua" "$HOME/.config/nvim/lua/chadrc.lua"
