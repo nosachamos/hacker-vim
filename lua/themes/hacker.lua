@@ -9,7 +9,8 @@ local P = {
   selection_bg = "#3333FF",
   selection_fg = "#FFFFFF",
   selection_inactive_bg = "#42424F",
-  caret_row = "#000066",
+  caret_row = "#252525",
+  breakpoint_line = "#401111",
   gutter_bg = "#131314",
   line_nr = "#999999",
   line_nr_active = "#FFFFFF",
@@ -128,6 +129,7 @@ M.polish_hl = {
     TSVariableMember = { fg = P.constant },
     TSVariableMemberKey = { fg = P.constant },
     jsonKeyword = { fg = P.constant },
+    DapBreakpointLine = { bg = P.breakpoint_line },
   },
   nvimtree = {
     NvimTreeNormal = { bg = P.ui_bg, fg = P.ui_fg },

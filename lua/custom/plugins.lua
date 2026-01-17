@@ -300,11 +300,11 @@ return {
     config = function()
       local dap = require("dap")
 
-      vim.fn.sign_define("DapBreakpoint", { text = "B", texthl = "DiagnosticError" })
-      vim.fn.sign_define("DapBreakpointCondition", { text = "C", texthl = "DiagnosticWarn" })
-      vim.fn.sign_define("DapLogPoint", { text = "L", texthl = "DiagnosticInfo" })
+      vim.fn.sign_define("DapBreakpoint", { text = "B", texthl = "DiagnosticError", linehl = "DapBreakpointLine" })
+      vim.fn.sign_define("DapBreakpointCondition", { text = "C", texthl = "DiagnosticWarn", linehl = "DapBreakpointLine" })
+      vim.fn.sign_define("DapLogPoint", { text = "L", texthl = "DiagnosticInfo", linehl = "DapBreakpointLine" })
       vim.fn.sign_define("DapStopped", { text = ">", texthl = "DiagnosticWarn", linehl = "Visual" })
-      vim.fn.sign_define("DapBreakpointRejected", { text = "R", texthl = "DiagnosticHint" })
+      vim.fn.sign_define("DapBreakpointRejected", { text = "R", texthl = "DiagnosticHint", linehl = "DapBreakpointLine" })
 
       local map = vim.keymap.set
       map("n", "<F5>", function()
