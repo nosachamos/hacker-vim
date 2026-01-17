@@ -131,6 +131,10 @@ if [ -d "$tmpdir/hacker-vim/lua/themes" ]; then
     rm -rf "$HOME/.config/nvim/lua/themes"
     cp -a "$tmpdir/hacker-vim/lua/themes" "$HOME/.config/nvim/lua/themes"
 fi
+if [ -d "$tmpdir/hacker-vim/after" ]; then
+    rm -rf "$HOME/.config/nvim/after"
+    cp -a "$tmpdir/hacker-vim/after" "$HOME/.config/nvim/after"
+fi
 
 if [ -f "$tmpdir/hacker-vim/lua/chadrc.lua" ]; then
     cp -a "$tmpdir/hacker-vim/lua/chadrc.lua" "$HOME/.config/nvim/lua/chadrc.lua"
@@ -186,12 +190,33 @@ fi
 
 FONT_DIR="$HOME/.local/share/fonts"
 font_installed=0
-if fc-list | grep -i "JetBrainsMono" | grep -qi "Nerd"; then
+if ls "$FONT_DIR"/JetBrainsMonoNerdFont* >/dev/null 2>&1; then
     font_installed=1
 fi
 
-if [ "$kitty_installed" -eq 1 ] && [ "$font_installed" -eq 1 ]; then
-    echo "Kitty + Nerd Font already installed; skipping."
+if [ "$font_installed" -eq 0 ]; then
+    for d in /usr/local/share/fonts /usr/share/fonts; do
+        if [ -d "$d" ] && find "$d" -maxdepth 3 -type f \( -iname "JetBrainsMonoNerdFont*.ttf" -o -iname "JetBrainsMonoNerdFont*.otf" \) -print -quit | grep -q .; then
+            font_installed=1
+            break
+        fi
+    done
+fi
+
+if [ "$font_installed" -eq 0 ] && command -v fc-list >/dev/null 2>&1; then
+    if fc-list | grep -i "JetBrainsMono" | grep -qi "Nerd"; then
+        font_installed=1
+    fi
+fi
+
+KITTY_CONF="$HOME/.config/kitty/kitty.conf"
+kitty_conf_ok=0
+if [ -f "$KITTY_CONF" ] && grep -q "JetBrainsMono Nerd Font" "$KITTY_CONF" 2>/dev/null; then
+    kitty_conf_ok=1
+fi
+
+if [ "$kitty_installed" -eq 1 ] && [ "$font_installed" -eq 1 ] && [ "$kitty_conf_ok" -eq 1 ]; then
+    echo "Kitty + Nerd Font already installed/configured; skipping."
 else
     if [ "$kitty_installed" -ne 1 ]; then
         sudo apt install -y kitty
@@ -199,17 +224,16 @@ else
     fi
 
     if [ "$font_installed" -ne 1 ]; then
-    mkdir -p "$FONT_DIR"
-    wget -qO /tmp/JetBrainsMono.zip "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/JetBrainsMono.zip"
-    unzip -o /tmp/JetBrainsMono.zip -d "$FONT_DIR"
-    fc-cache -fv
-    rm -f /tmp/JetBrainsMono.zip
+        mkdir -p "$FONT_DIR"
+        wget -qO /tmp/JetBrainsMono.zip "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/JetBrainsMono.zip"
+        unzip -o /tmp/JetBrainsMono.zip -d "$FONT_DIR"
+        fc-cache -fv
+        rm -f /tmp/JetBrainsMono.zip
         font_installed=1
     fi
 
-KITTY_CONF="$HOME/.config/kitty/kitty.conf"
-mkdir -p "$(dirname "$KITTY_CONF")"
     if [ "$kitty_installed" -eq 1 ] && [ "$font_installed" -eq 1 ]; then
+        mkdir -p "$(dirname "$KITTY_CONF")"
         if ! grep -q "JetBrainsMono Nerd Font" "$KITTY_CONF" 2>/dev/null; then
             {
                 echo "font_family JetBrainsMono Nerd Font"
