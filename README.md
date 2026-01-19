@@ -6,7 +6,7 @@ Run the installation process:
 curl -sSL "https://raw.githubusercontent.com/nosachamos/hacker-vim/master/install.sh?$(date +%s)" | bash
 ```
 
-This repo is an NVChad overlay. Custom config and plugins live in `lua/custom` and are copied into `~/.config/nvim/lua/custom` by the installer (currently includes neoscroll, VimBeGood, Python debugging via nvim-dap, and nvim-tree showing gitignored/hidden files by default). A custom theme named `hacker` is installed from `lua/themes/hacker.lua` (JetBrains Hacker/Specktro‑inspired palette; all colors are listed there for manual edits). A small compatibility shim is also installed at `lua/chadrc.lua`, and for newer NvChad starters the installer adds an import in `lua/plugins/init.lua` to load `lua/plugins/custom.lua`.
+This repo is an NVChad overlay. Custom config and plugins live in `lua/custom` and are copied into `~/.config/nvim/lua/custom` by the installer (currently includes neoscroll, VimBeGood, Neogit, Python debugging via nvim-dap, and nvim-tree showing gitignored/hidden files by default). A custom theme named `hacker` is installed from `lua/themes/hacker.lua` (JetBrains Hacker/Specktro‑inspired palette; all colors are listed there for manual edits). A small compatibility shim is also installed at `lua/chadrc.lua`, and for newer NvChad starters the installer adds an import in `lua/plugins/init.lua` to load `lua/plugins/custom.lua`.
 It also includes an autocmd that creates missing parent directories on save.
 The installer patches NvChad's init.lua to safely generate/load base46 cache files on first run.
 
@@ -14,10 +14,13 @@ Features include:
 - neoscroll for smooth scrolling with going page up / down;
 - automatic directory creation when doing :e (we all want it);
 - plugins for out-of-the-box python debugging;
+- neogit with gitsigns + diffview + telescope integration;
 - an easy way of saving and launching various app configs per project;
 - much more
 
-Python debugging keybindings (nvim-dap):
+Custom key mappings (overlay)
+
+Debugging (nvim-dap):
 - F5 continue
 - F10 step over
 - F11 step into
@@ -34,10 +37,18 @@ Python debugging keybindings (nvim-dap):
 - <leader>dT test class (python)
 - visual <leader>ds debug selection
 
+Git:
+- <leader>gg open Neogit (tab)
+- <leader>gc commit
+- <leader>gp pull
+- <leader>gP push
+- <leader>gm merge
+- <leader>gr reset
+
 Debugpy install note:
 - The installer will try `apt install python3-debugpy` when available.
 - If you debug inside a venv (recommended), install debugpy in that venv: `python -m pip install debugpy`.
- - The overlay auto-detects venvs named `.venv`, `venv`, `env`, or `environment` in the repo root.
+- The overlay auto-detects venvs named `.venv`, `venv`, `env`, or `environment` in the repo root.
 
 Project debug configs (saved per repo):
 - Create `.nvim/dap.lua` in the repo root; it must return a table keyed by filetype.

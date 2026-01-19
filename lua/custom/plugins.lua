@@ -265,6 +265,29 @@ local function smart_continue(dap)
   vim.notify("No DAP configurations found. Add .nvim/dap.lua or .vscode/launch.json.", vim.log.levels.WARN)
 end
 
+local function neogit_action(action)
+  return function()
+    local ok, neogit = pcall(require, "neogit")
+    if not ok then
+      vim.notify("Neogit not loaded", vim.log.levels.WARN)
+      return
+    end
+
+    local cmd_ok = pcall(vim.cmd, "Neogit " .. action)
+    if cmd_ok then
+      return
+    end
+
+    local popup_ok, popup = pcall(require, "neogit.popups." .. action)
+    if popup_ok and type(popup.open) == "function" then
+      popup.open()
+      return
+    end
+
+    neogit.open({ kind = "tab" })
+  end
+end
+
 return {
   {
     "karb94/neoscroll.nvim",
@@ -292,6 +315,38 @@ return {
       opts.filters.custom = {}
 
       return opts
+    end,
+  },
+  {
+    "NeogitOrg/neogit",
+    cmd = "Neogit",
+    keys = {
+      {
+        "<leader>gg",
+        function()
+          require("neogit").open({ kind = "tab" })
+        end,
+        desc = "Neogit",
+      },
+      { "<leader>gc", neogit_action("commit"), desc = "Neogit commit" },
+      { "<leader>gp", neogit_action("pull"), desc = "Neogit pull" },
+      { "<leader>gP", neogit_action("push"), desc = "Neogit push" },
+      { "<leader>gm", neogit_action("merge"), desc = "Neogit merge" },
+      { "<leader>gr", neogit_action("reset"), desc = "Neogit reset" },
+    },
+    dependencies = {
+      "nvim-lua/plenary.nvim",
+      "sindrets/diffview.nvim",
+      "nvim-telescope/telescope.nvim",
+      "lewis6991/gitsigns.nvim",
+    },
+    config = function()
+      require("neogit").setup({
+        integrations = {
+          diffview = true,
+          telescope = true,
+        },
+      })
     end,
   },
   {
