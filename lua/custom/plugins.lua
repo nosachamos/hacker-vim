@@ -399,18 +399,18 @@ return {
         layouts = {
           {
             elements = {
-              "scopes",
-              "breakpoints",
-              "watches",
+              { id = "scopes", size = 0.35 },
+              { id = "breakpoints", size = 0.15 },
+              { id = "stacks", size = 0.25 },
+              { id = "watches", size = 0.25 },
             },
             size = 50,
             position = "right",
           },
           {
             elements = {
-              "stacks",
-              "console",
-              "repl",
+              { id = "repl", size = 0.5 },
+              { id = "console", size = 0.5 },
             },
             size = 12,
             position = "bottom",
