@@ -422,17 +422,21 @@ return {
         dapui.open()
       end
 
+      -- Critical: do not close automatically (prevents repeated open/close layout churn)
+      dap.listeners.before.event_terminated["dapui_config"] = nil
+      dap.listeners.before.event_exited["dapui_config"] = nil
+
       vim.keymap.set("n", "<Leader>du", dapui.toggle, { desc = "DAP UI toggle" })
       vim.api.nvim_create_user_command("DapUiOpen", function()
-        dapui.open()
-      end, {})
+          dapui.open()
+          end, {})
       vim.api.nvim_create_user_command("DapUiClose", function()
-        dapui.close()
-      end, {})
+          dapui.close()
+          end, {})
       vim.api.nvim_create_user_command("DapUiToggle", function()
-        dapui.toggle()
-      end, {})
-    end,
+          dapui.toggle()
+          end, {})
+end,
   },
   {
     "mfussenegger/nvim-dap-python",
