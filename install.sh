@@ -90,6 +90,25 @@ import sys
 path = sys.argv[1]
 text = open(path, "r", encoding="utf-8").read()
 
+if "vim.uv = vim.loop" in text or "vim.uv=vim.loop" in text:
+    sys.exit(0)
+
+shim = (
+    "if vim.uv == nil then\n"
+    "  vim.uv = vim.loop\n"
+    "end\n\n"
+)
+
+with open(path, "w", encoding="utf-8") as f:
+    f.write(shim + text)
+PY
+
+    python3 - "$init_lua" <<'PY'
+import sys
+
+path = sys.argv[1]
+text = open(path, "r", encoding="utf-8").read()
+
 if 'pcall(dofile, vim.g.base46_cache .. "defaults")' in text:
     sys.exit(0)
 
@@ -320,7 +339,7 @@ if [ "$font_installed" -eq 1 ] && [ "$gnome_terminal_available" -eq 1 ] && [ -t 
         echo "JetBrainsMono Nerd Font not available to GNOME Terminal; skipping."
     fi
 else
-    echo "GNOME Terminal not detected or no TTY/font; skipping."
+    echo "NOTE: GNOME Terminal setup skipped (requires GNOME Terminal + Nerd Font + interactive TTY)."
 fi
 
 echo ""
