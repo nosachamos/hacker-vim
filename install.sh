@@ -45,7 +45,28 @@ if ! grep -q neovim-ppa /etc/apt/sources.list /etc/apt/sources.list.d/* 2>/dev/n
     sudo add-apt-repository -y ppa:neovim-ppa/unstable
 fi
 sudo apt update
-sudo apt install -y neovim
+
+# Unhold Neovim packages if they were pinned/held previously.
+held_pkgs="$(apt-mark showhold | awk '/^(neovim|neovim-runtime)$/ {print}' || true)"
+if [ -n "$held_pkgs" ]; then
+    echo "Unholding: $held_pkgs"
+    sudo apt-mark unhold $held_pkgs
+fi
+
+get_versions() {
+    apt-cache madison "$1" | awk '{print $3}' | sort -Vu
+}
+
+common_versions="$(comm -12 <(get_versions neovim) <(get_versions neovim-runtime) || true)"
+if [ -z "$common_versions" ]; then
+    echo "ERROR: No matching neovim/neovim-runtime versions found in apt."
+    echo "Try removing the PPA or install Neovim via an alternative method."
+    exit 1
+fi
+
+best_version="$(echo "$common_versions" | tail -n1)"
+echo "Selected Neovim version: $best_version"
+sudo apt install -y --allow-downgrades "neovim=${best_version}" "neovim-runtime=${best_version}"
 hash -r
 
 echo "[5/10] Ensuring Python debug adapter (debugpy) is available..."
