@@ -17,6 +17,8 @@ Features include:
 - automatic directory creation when doing :e (we all want it);
 - plugins for out-of-the-box python debugging;
 - neogit with gitsigns + diffview + telescope integration;
+- system clipboard integration with visual copy/paste shortcuts;
+- Telescope grep for visual selections;
 - an easy way of saving and launching various app configs per project;
 - much more
 
@@ -46,6 +48,16 @@ Git:
 - <leader>gP push
 - <leader>gm merge
 - <leader>gr reset
+
+Search (Telescope):
+- visual <leader>fg grep selected text
+
+Clipboard:
+- visual <C-c> copy selection to system clipboard
+- normal <C-v> paste system clipboard at cursor
+- insert <C-v> paste system clipboard
+- visual <C-v> replace selection with system clipboard
+Note: <C-v> overrides Vim's default block-visual mode to match clipboard paste.
 
 Debugpy install note:
 - The installer will try `apt install python3-debugpy` when available.
