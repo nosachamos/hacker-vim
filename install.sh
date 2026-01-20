@@ -46,6 +46,14 @@ echo "[4/10] Installing Neovim..."
 if ! grep -q neovim-ppa /etc/apt/sources.list /etc/apt/sources.list.d/* 2>/dev/null; then
     sudo add-apt-repository -y ppa:neovim-ppa/unstable
 fi
+
+if [ ! -f /etc/apt/preferences.d/neovim-ppa ]; then
+    sudo tee /etc/apt/preferences.d/neovim-ppa >/dev/null <<'EOF'
+Package: neovim neovim-runtime
+Pin: release o=LP-PPA-neovim-ppa-unstable
+Pin-Priority: 1001
+EOF
+fi
 sudo apt update
 
 # Unhold Neovim packages if they were pinned/held previously.
@@ -59,51 +67,35 @@ get_versions() {
     apt-cache madison "$1" | awk '{print $3}' | sort -Vu
 }
 
-install_appimage() {
-    local url="https://github.com/neovim/neovim/releases/latest/download/nvim.appimage"
-    local tmp="/tmp/nvim.appimage"
-    echo "Installing Neovim AppImage..."
-    wget -qO "$tmp" "$url"
-    chmod +x "$tmp"
-    sudo install -m 755 "$tmp" /usr/local/bin/nvim
-    rm -f "$tmp"
-    NVIM_BIN="/usr/local/bin/nvim"
+get_versions_ppa() {
+    apt-cache madison "$1" | awk '/neovim-ppa\\/unstable/ {print $3}' | sort -Vu
 }
 
-best_version=""
 common_versions="$(comm -12 <(get_versions neovim) <(get_versions neovim-runtime) || true)"
-if [ -n "$common_versions" ]; then
+common_ppa_versions="$(comm -12 <(get_versions_ppa neovim) <(get_versions_ppa neovim-runtime) || true)"
+
+best_version=""
+if [ -n "$common_ppa_versions" ]; then
+    best_version="$(echo "$common_ppa_versions" | tail -n1)"
+else
     best_version="$(echo "$common_versions" | tail -n1)"
 fi
 
-need_appimage=0
 if [ -z "$best_version" ]; then
-    echo "NOTE: No matching neovim/neovim-runtime versions found in apt; using AppImage."
-    need_appimage=1
-else
-    echo "Selected Neovim version: $best_version"
-    if dpkg --compare-versions "$best_version" lt "0.10.0"; then
-        echo "NOTE: Apt provides Neovim $best_version (<0.10); using AppImage."
-        need_appimage=1
-    else
-        if ! sudo apt install -y --allow-downgrades "neovim=${best_version}" "neovim-runtime=${best_version}"; then
-            echo "NOTE: apt install failed; using AppImage."
-            need_appimage=1
-        fi
-    fi
+    echo "ERROR: No matching neovim/neovim-runtime versions found in apt."
+    echo "Ensure the PPA is reachable, then rerun."
+    exit 1
 fi
 
-if [ "$need_appimage" -eq 1 ]; then
-    sudo apt remove -y neovim neovim-runtime || true
-    install_appimage
-else
-    hash -r
-    NVIM_BIN="$(command -v nvim || echo nvim)"
-    nvim_ver="$("$NVIM_BIN" --version 2>/dev/null | head -n1 | awk '{print $2}' | sed 's/^v//')"
-    if [ -z "$nvim_ver" ] || dpkg --compare-versions "$nvim_ver" lt "0.10.0"; then
-        echo "NOTE: Installed Neovim $nvim_ver (<0.10); using AppImage."
-        install_appimage
-    fi
+echo "Selected Neovim version: $best_version"
+sudo apt install -y --allow-downgrades "neovim=${best_version}" "neovim-runtime=${best_version}"
+hash -r
+NVIM_BIN="$(command -v nvim || echo nvim)"
+nvim_ver="$("$NVIM_BIN" --version 2>/dev/null | head -n1 | awk '{print $2}' | sed 's/^v//')"
+if [ -z "$nvim_ver" ] || dpkg --compare-versions "$nvim_ver" lt "0.10.0"; then
+    echo "ERROR: Neovim $nvim_ver is too old for NvChad (requires >= 0.10)."
+    echo "Fix: ensure the neovim-ppa/unstable PPA is enabled and preferred, then rerun."
+    exit 1
 fi
 
 echo "[5/10] Ensuring Python debug adapter (debugpy) is available..."
