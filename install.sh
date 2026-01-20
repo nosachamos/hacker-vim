@@ -43,8 +43,19 @@ rm -rf \
     "$HOME/.cache/nvim"
 
 echo "[4/10] Installing Neovim..."
-if ! grep -q neovim-ppa /etc/apt/sources.list /etc/apt/sources.list.d/* 2>/dev/null; then
+needs_update=0
+
+# Ensure the unstable PPA exists and is enabled (some machines only have the stable PPA).
+if ! grep -Rqs "neovim-ppa/unstable" /etc/apt/sources.list /etc/apt/sources.list.d/* 2>/dev/null; then
     sudo add-apt-repository -y ppa:neovim-ppa/unstable
+    needs_update=1
+else
+    for f in /etc/apt/sources.list.d/*.sources; do
+        if [ -f "$f" ] && grep -q "neovim-ppa/unstable" "$f" && grep -q "^Enabled: no" "$f"; then
+            sudo sed -i 's/^Enabled: no/Enabled: yes/' "$f"
+            needs_update=1
+        fi
+    done
 fi
 
 if [ ! -f /etc/apt/preferences.d/neovim-ppa ]; then
@@ -53,7 +64,9 @@ Package: neovim neovim-runtime
 Pin: release o=LP-PPA-neovim-ppa-unstable
 Pin-Priority: 1001
 EOF
+    needs_update=1
 fi
+
 sudo apt update
 
 # Unhold Neovim packages if they were pinned/held previously.
@@ -78,6 +91,7 @@ best_version=""
 if [ -n "$common_ppa_versions" ]; then
     best_version="$(echo "$common_ppa_versions" | tail -n1)"
 else
+    echo "NOTE: neovim-ppa/unstable packages not found in apt cache; falling back to other sources."
     best_version="$(echo "$common_versions" | tail -n1)"
 fi
 
@@ -94,7 +108,7 @@ NVIM_BIN="$(command -v nvim || echo nvim)"
 nvim_ver="$("$NVIM_BIN" --version 2>/dev/null | head -n1 | awk '{print $2}' | sed 's/^v//')"
 if [ -z "$nvim_ver" ] || dpkg --compare-versions "$nvim_ver" lt "0.10.0"; then
     echo "ERROR: Neovim $nvim_ver is too old for NvChad (requires >= 0.10)."
-    echo "Fix: ensure the neovim-ppa/unstable PPA is enabled and preferred, then rerun."
+    echo "Fix: ensure the neovim-ppa/unstable PPA is enabled, publishing for your Ubuntu release, and then rerun."
     exit 1
 fi
 
