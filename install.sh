@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "[1/9] Installing prerequisites..."
+echo "[1/10] Installing prerequisites..."
 sudo apt update
 sudo apt install -y --no-install-recommends \
     git curl ca-certificates unzip wget ripgrep fd-find xclip software-properties-common fontconfig python3 python3-venv
 
-echo "[2/9] Removing any existing Neovim binaries (best-effort)..."
+echo "[2/10] Removing any existing Neovim binaries (best-effort)..."
 if dpkg -s neovim >/dev/null 2>&1; then
     sudo apt remove -y neovim
 fi
@@ -20,7 +20,7 @@ if command -v snap >/dev/null 2>&1; then
     fi
 fi
 
-echo "[3/9] Removing any existing Neovim config/state (backup + clean)..."
+echo "[3/10] Removing any existing Neovim config/state (backup + clean)..."
 ts="$(date +%Y%m%d_%H%M%S)"
 
 for p in \
@@ -40,7 +40,7 @@ rm -rf \
     "$HOME/.local/state/nvim" \
     "$HOME/.cache/nvim"
 
-echo "[4/9] Installing Neovim..."
+echo "[4/10] Installing Neovim..."
 if ! grep -q neovim-ppa /etc/apt/sources.list /etc/apt/sources.list.d/* 2>/dev/null; then
     sudo add-apt-repository -y ppa:neovim-ppa/unstable
 fi
@@ -48,7 +48,7 @@ sudo apt update
 sudo apt install -y neovim
 hash -r
 
-echo "[5/9] Ensuring Python debug adapter (debugpy) is available..."
+echo "[5/10] Ensuring Python debug adapter (debugpy) is available..."
 if apt-cache show python3-debugpy >/dev/null 2>&1; then
     if ! sudo apt install -y python3-debugpy; then
         echo "NOTE: Failed to install python3-debugpy. Install debugpy in your venv: python -m pip install debugpy"
@@ -57,7 +57,7 @@ else
     echo "NOTE: python3-debugpy not available via apt. Install debugpy in your venv: python -m pip install debugpy"
 fi
 
-echo "[6/9] Installing NvChad starter..."
+echo "[6/10] Installing NvChad starter..."
 git clone --depth 1 https://github.com/NvChad/starter "$HOME/.config/nvim"
 rm -rf "$HOME/.config/nvim/.git"
 
@@ -113,7 +113,7 @@ else:
 PY
 fi
 
-echo "[7/9] Fetching hacker-vim and applying custom overlay (lua/custom)..."
+echo "[7/10] Fetching hacker-vim and applying custom overlay (lua/custom)..."
 tmpdir="$(mktemp -d)"
 trap 'rm -rf "$tmpdir"' EXIT
 
@@ -178,11 +178,11 @@ PY
     fi
 fi
 
-echo "[8/9] Headless plugin install (Lazy sync)..."
+echo "[8/10] Headless plugin install (Lazy sync)..."
 nvim --headless "+Lazy! sync" +qa || true
 nvim --headless "+Lazy! sync" +qa || true
 
-echo "[9/9] (Optional) Kitty + Nerd Font setup..."
+echo "[9/10] (Optional) Kitty + Nerd Font setup..."
 kitty_installed=0
 if command -v kitty >/dev/null 2>&1; then
     kitty_installed=1
@@ -243,6 +243,63 @@ else
             } >> "$KITTY_CONF"
         fi
     fi
+fi
+
+echo "[10/10] (Optional) GNOME Terminal font setup..."
+gnome_terminal_available=0
+if command -v gsettings >/dev/null 2>&1; then
+    if gsettings list-schemas 2>/dev/null | grep -qx "org.gnome.Terminal.ProfilesList"; then
+        gnome_terminal_available=1
+    fi
+fi
+
+if [ "$font_installed" -eq 1 ] && [ "$gnome_terminal_available" -eq 1 ] && [ -t 0 ]; then
+    font_name=""
+    if command -v fc-list >/dev/null 2>&1; then
+        if fc-list | grep -qi "JetBrainsMono Nerd Font Mono"; then
+            font_name="JetBrainsMono Nerd Font Mono"
+        elif fc-list | grep -qi "JetBrainsMono Nerd Font"; then
+            font_name="JetBrainsMono Nerd Font"
+        fi
+    fi
+
+    if [ -n "$font_name" ]; then
+        default_profile="$(gsettings get org.gnome.Terminal.ProfilesList default 2>/dev/null | tr -d "'")" || default_profile=""
+        if [ -z "$default_profile" ]; then
+            echo "NOTE: Could not read GNOME Terminal default profile; skipping."
+        else
+            profile_path="/org/gnome/terminal/legacy/profiles:/:${default_profile}/"
+            current_font="$(gsettings get "org.gnome.Terminal.Legacy.Profile:${profile_path}" font 2>/dev/null | tr -d "'")" || current_font=""
+            if [ -z "$current_font" ]; then
+                echo "NOTE: Could not read GNOME Terminal font; skipping."
+            elif echo "$current_font" | grep -q "JetBrainsMono Nerd Font"; then
+                echo "GNOME Terminal font already set to JetBrainsMono Nerd Font; skipping."
+            else
+                read -r -p "Set GNOME Terminal font to ${font_name}? [y/N] " reply
+                if [[ "$reply" =~ ^[Yy]$ ]]; then
+                    font_size="$(echo "$current_font" | awk '{print $NF}')"
+                    if ! echo "$font_size" | grep -Eq '^[0-9]+$'; then
+                        font_size="11"
+                    fi
+                    new_font="${font_name} ${font_size}"
+                    if ! gsettings set "org.gnome.Terminal.Legacy.Profile:${profile_path}" use-system-font false; then
+                        echo "NOTE: Failed to disable system font in GNOME Terminal; skipping."
+                    fi
+                    if gsettings set "org.gnome.Terminal.Legacy.Profile:${profile_path}" font "$new_font"; then
+                        echo "GNOME Terminal font set to ${new_font}."
+                    else
+                        echo "NOTE: Failed to set GNOME Terminal font."
+                    fi
+                else
+                    echo "Skipping GNOME Terminal font change."
+                fi
+            fi
+        fi
+    else
+        echo "JetBrainsMono Nerd Font not available to GNOME Terminal; skipping."
+    fi
+else
+    echo "GNOME Terminal not detected or no TTY/font; skipping."
 fi
 
 echo ""
