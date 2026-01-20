@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+NVIM_BIN="nvim"
+
 echo "[1/10] Installing prerequisites..."
 sudo apt update
 sudo apt install -y --no-install-recommends \
@@ -57,17 +59,52 @@ get_versions() {
     apt-cache madison "$1" | awk '{print $3}' | sort -Vu
 }
 
+install_appimage() {
+    local url="https://github.com/neovim/neovim/releases/latest/download/nvim.appimage"
+    local tmp="/tmp/nvim.appimage"
+    echo "Installing Neovim AppImage..."
+    wget -qO "$tmp" "$url"
+    chmod +x "$tmp"
+    sudo install -m 755 "$tmp" /usr/local/bin/nvim
+    rm -f "$tmp"
+    NVIM_BIN="/usr/local/bin/nvim"
+}
+
+best_version=""
 common_versions="$(comm -12 <(get_versions neovim) <(get_versions neovim-runtime) || true)"
-if [ -z "$common_versions" ]; then
-    echo "ERROR: No matching neovim/neovim-runtime versions found in apt."
-    echo "Try removing the PPA or install Neovim via an alternative method."
-    exit 1
+if [ -n "$common_versions" ]; then
+    best_version="$(echo "$common_versions" | tail -n1)"
 fi
 
-best_version="$(echo "$common_versions" | tail -n1)"
-echo "Selected Neovim version: $best_version"
-sudo apt install -y --allow-downgrades "neovim=${best_version}" "neovim-runtime=${best_version}"
-hash -r
+need_appimage=0
+if [ -z "$best_version" ]; then
+    echo "NOTE: No matching neovim/neovim-runtime versions found in apt; using AppImage."
+    need_appimage=1
+else
+    echo "Selected Neovim version: $best_version"
+    if dpkg --compare-versions "$best_version" lt "0.10.0"; then
+        echo "NOTE: Apt provides Neovim $best_version (<0.10); using AppImage."
+        need_appimage=1
+    else
+        if ! sudo apt install -y --allow-downgrades "neovim=${best_version}" "neovim-runtime=${best_version}"; then
+            echo "NOTE: apt install failed; using AppImage."
+            need_appimage=1
+        fi
+    fi
+fi
+
+if [ "$need_appimage" -eq 1 ]; then
+    sudo apt remove -y neovim neovim-runtime || true
+    install_appimage
+else
+    hash -r
+    NVIM_BIN="$(command -v nvim || echo nvim)"
+    nvim_ver="$("$NVIM_BIN" --version 2>/dev/null | head -n1 | awk '{print $2}' | sed 's/^v//')"
+    if [ -z "$nvim_ver" ] || dpkg --compare-versions "$nvim_ver" lt "0.10.0"; then
+        echo "NOTE: Installed Neovim $nvim_ver (<0.10); using AppImage."
+        install_appimage
+    fi
+fi
 
 echo "[5/10] Ensuring Python debug adapter (debugpy) is available..."
 if apt-cache show python3-debugpy >/dev/null 2>&1; then
@@ -219,8 +256,8 @@ PY
 fi
 
 echo "[8/10] Headless plugin install (Lazy sync)..."
-nvim --headless "+Lazy! sync" +qa || true
-nvim --headless "+Lazy! sync" +qa || true
+"$NVIM_BIN" --headless "+Lazy! sync" +qa || true
+"$NVIM_BIN" --headless "+Lazy! sync" +qa || true
 
 echo "[9/10] (Optional) Kitty + Nerd Font setup..."
 kitty_installed=0
@@ -344,5 +381,5 @@ fi
 
 echo ""
 echo "Done."
-echo "Config: $(nvim --headless "+lua print(vim.fn.stdpath('config'))" +qa)"
+echo "Config: $("$NVIM_BIN" --headless "+lua print(vim.fn.stdpath('config'))" +qa)"
 echo "Run: nvim"
