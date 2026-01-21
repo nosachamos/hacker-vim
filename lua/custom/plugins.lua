@@ -529,7 +529,31 @@ end,
       if not vim.tbl_contains(opts.ensure_installed, "pyright") then
         table.insert(opts.ensure_installed, "pyright")
       end
+      if not vim.tbl_contains(opts.ensure_installed, "tsserver") then
+        table.insert(opts.ensure_installed, "tsserver")
+      end
       return opts
+    end,
+  },
+  {
+    "WhoIsSethDaniel/mason-tool-installer.nvim",
+    dependencies = { "williamboman/mason.nvim" },
+    config = function()
+      require("mason-tool-installer").setup({
+        ensure_installed = {
+          "ruff",
+          "eslint_d",
+        },
+        auto_update = false,
+        run_on_start = true,
+      })
+    end,
+  },
+  {
+    "mfussenegger/nvim-lint",
+    event = { "BufReadPre", "BufNewFile" },
+    config = function()
+      require("custom.configs.lint")
     end,
   },
 }
