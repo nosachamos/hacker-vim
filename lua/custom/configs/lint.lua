@@ -51,9 +51,18 @@ lint.linters_by_ft = {
 
 if lint.linters.eslint_d then
   lint.linters.eslint_d.condition = function(ctx)
+    if vim.fn.executable("eslint_d") ~= 1 then
+      return false
+    end
     local bufname = ctx and ctx.filename or vim.api.nvim_buf_get_name(0)
     local start_dir = bufname ~= "" and vim.fn.fnamemodify(bufname, ":p:h") or vim.fn.getcwd()
     return has_eslint_config(start_dir)
+  end
+end
+
+if lint.linters.ruff then
+  lint.linters.ruff.condition = function()
+    return vim.fn.executable("ruff") == 1
   end
 end
 

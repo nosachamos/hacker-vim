@@ -26,10 +26,23 @@ local function setup_server(server, config)
     config.capabilities = capabilities
   end
 
-  if vim.lsp and type(vim.lsp.config) == "function" and type(vim.lsp.enable) == "function" then
-    local ok = pcall(vim.lsp.config, server, config)
-    if ok then
-      vim.lsp.enable(server)
+  if vim.lsp and vim.lsp.config and vim.lsp.enable then
+    if type(vim.lsp.config) == "function" then
+      local ok = pcall(vim.lsp.config, server, config)
+      if ok then
+        pcall(vim.lsp.enable, server)
+      end
+      return
+    end
+
+    if type(vim.lsp.config) == "table" then
+      local existing = vim.lsp.config[server]
+      if type(existing) == "table" then
+        vim.lsp.config[server] = vim.tbl_deep_extend("force", existing, config)
+      else
+        vim.lsp.config[server] = config
+      end
+      pcall(vim.lsp.enable, server)
       return
     end
   end
@@ -44,5 +57,11 @@ local function setup_server(server, config)
   end
 end
 
+local use_native = vim.lsp and vim.lsp.config and vim.lsp.enable
+
 setup_server("pyright", {})
-setup_server("ts_ls", {})
+if use_native then
+  setup_server("ts_ls", {})
+else
+  setup_server("tsserver", {})
+end
