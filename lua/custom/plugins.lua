@@ -512,4 +512,24 @@ end,
       load_project_dap_configs(dap, { quiet = true })
     end,
   },
+  {
+    "neovim/nvim-lspconfig",
+    config = function()
+      local ok = pcall(require, "plugins.configs.lspconfig")
+      if not ok then
+        pcall(require, "nvchad.configs.lspconfig")
+      end
+      require("custom.configs.lspconfig")
+    end,
+  },
+  {
+    "williamboman/mason-lspconfig.nvim",
+    opts = function(_, opts)
+      opts.ensure_installed = opts.ensure_installed or {}
+      if not vim.tbl_contains(opts.ensure_installed, "pyright") then
+        table.insert(opts.ensure_installed, "pyright")
+      end
+      return opts
+    end,
+  },
 }
