@@ -265,6 +265,9 @@ echo "[8/10] Headless plugin install (Lazy sync)..."
 "$NVIM_BIN" --headless "+Lazy! sync" +qa || true
 "$NVIM_BIN" --headless "+Lazy! sync" +qa || true
 
+echo "[8.5/10] Installing Mason tools (pyright, ts server, ruff, eslint_d)..."
+"$NVIM_BIN" --headless "+MasonInstall pyright typescript-language-server ruff eslint_d" +qa || true
+
 echo "[9/10] (Optional) Kitty + Nerd Font setup..."
 kitty_installed=0
 if command -v kitty >/dev/null 2>&1; then
