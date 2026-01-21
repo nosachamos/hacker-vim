@@ -1,8 +1,3 @@
-local ok, lspconfig = pcall(require, "lspconfig")
-if not ok then
-  return
-end
-
 local base_ok, base = pcall(require, "plugins.configs.lspconfig")
 if not base_ok then
   base_ok, base = pcall(require, "nvchad.configs.lspconfig")
@@ -22,12 +17,32 @@ if not capabilities then
   end
 end
 
-lspconfig.pyright.setup({
-  on_attach = on_attach,
-  capabilities = capabilities,
-})
+local function setup_server(server, config)
+  config = config or {}
+  if on_attach and config.on_attach == nil then
+    config.on_attach = on_attach
+  end
+  if capabilities and config.capabilities == nil then
+    config.capabilities = capabilities
+  end
 
-lspconfig.tsserver.setup({
-  on_attach = on_attach,
-  capabilities = capabilities,
-})
+  if vim.lsp and type(vim.lsp.config) == "function" and type(vim.lsp.enable) == "function" then
+    local ok = pcall(vim.lsp.config, server, config)
+    if ok then
+      vim.lsp.enable(server)
+      return
+    end
+  end
+
+  local ok, lspconfig = pcall(require, "lspconfig")
+  if not ok then
+    return
+  end
+
+  if lspconfig[server] and type(lspconfig[server].setup) == "function" then
+    lspconfig[server].setup(config)
+  end
+end
+
+setup_server("pyright", {})
+setup_server("ts_ls", {})

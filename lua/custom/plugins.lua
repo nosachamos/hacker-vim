@@ -529,8 +529,8 @@ end,
       if not vim.tbl_contains(opts.ensure_installed, "pyright") then
         table.insert(opts.ensure_installed, "pyright")
       end
-      if not vim.tbl_contains(opts.ensure_installed, "tsserver") then
-        table.insert(opts.ensure_installed, "tsserver")
+      if not vim.tbl_contains(opts.ensure_installed, "ts_ls") then
+        table.insert(opts.ensure_installed, "ts_ls")
       end
       return opts
     end,
