@@ -318,6 +318,13 @@ return {
     end,
   },
   {
+    "xiyaowong/virtcolumn.nvim",
+    event = { "BufReadPre", "BufNewFile" },
+    init = function()
+      vim.g.virtcolumn_char = "|"
+    end,
+  },
+  {
     "NeogitOrg/neogit",
     cmd = "Neogit",
     keys = {

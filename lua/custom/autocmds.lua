@@ -18,7 +18,8 @@ vim.opt.colorcolumn = "140"
 
 vim.api.nvim_create_autocmd("ColorScheme", {
   callback = function()
-    vim.api.nvim_set_hl(0, "ColorColumn", { bg = "#1f1f1f" })
+    vim.api.nvim_set_hl(0, "ColorColumn", { bg = "none" })
+    vim.api.nvim_set_hl(0, "VirtColumn", { fg = "#252525" })
   end,
 })
 
