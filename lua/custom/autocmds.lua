@@ -14,6 +14,14 @@ vim.api.nvim_create_autocmd("FileType", {
   end,
 })
 
+vim.opt.colorcolumn = "140"
+
+vim.api.nvim_create_autocmd("ColorScheme", {
+  callback = function()
+    vim.api.nvim_set_hl(0, "ColorColumn", { bg = "#1f1f1f" })
+  end,
+})
+
 local function buf_map(bufnr, mode, lhs, rhs, desc)
   vim.keymap.set(mode, lhs, rhs, { buffer = bufnr, desc = desc })
 end
